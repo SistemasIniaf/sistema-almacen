@@ -1,8 +1,9 @@
-import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { isAxiosError } from "axios"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup } from "@/components/ui/field"
@@ -19,13 +20,16 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const {
-    mutate: login,
-    isPending,
-    error,
-  } = useLogin({
-    onError: () => {
+  const { mutate: login, isPending } = useLogin({
+    onError: (error) => {
       resetField("password")
+
+      const errorMessage = isAxiosError(error)
+        ? ((error.response?.data as { message?: string })?.message ??
+          "Error al iniciar sesión")
+        : null
+
+      toast.error(errorMessage)
     },
   })
 
@@ -40,12 +44,6 @@ export function LoginForm({
   function onSubmit(data: LoginFormInput) {
     login(data)
   }
-
-  // Extrae el mensaje de error que viene del backend
-  const errorMessage = isAxiosError(error)
-    ? ((error.response?.data as { message?: string })?.message ??
-      "Error al iniciar sesión")
-    : null
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -72,13 +70,6 @@ export function LoginForm({
                 control={control}
                 disabled={isPending}
               />
-
-              {/* Error del servidor (credenciales incorrectas, usuario inactivo, etc.) */}
-              {errorMessage && (
-                <p className="text-center text-sm text-destructive">
-                  {errorMessage}
-                </p>
-              )}
 
               <Field className="mt-4">
                 <Button type="submit" disabled={isPending}>

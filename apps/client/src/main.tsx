@@ -8,6 +8,7 @@ import "./index.css"
 import { router } from "./routes"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,9 +27,10 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <TooltipProvider>
           <RouterProvider router={router} />
+          <Toaster position="top-center" />
         </TooltipProvider>
       </ThemeProvider>
-      {/* Solo visible en desarrollo */}
+
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>
