@@ -16,6 +16,7 @@ import { Rol } from 'src/common/enums/rol.enum';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { CreateUnidadDto } from './dto/create-unidad.dto';
 import { UpdateUnidadDto } from './dto/update-unidad.dto';
+import { QueryUnidadDto } from './dto/query-unidad.dto';
 import { UnidadesService } from './unidades.service';
 
 @Controller('unidades')
@@ -31,8 +32,15 @@ export class UnidadesController {
 
   // -Todos los roles autenticados pueden listar unidades. ?soloActivos=true → filtra solo las activas.
   @Get()
-  findAll(@Query('soloActivos') soloActivos?: string) {
-    return this.unidadesService.findAll(soloActivos === 'true');
+  findAll(@Query() query: QueryUnidadDto) {
+    return this.unidadesService.findAll(query);
+  }
+
+  // Lista completa sin paginar
+  @Get('all')
+  findAllNoPaginated(@Query('soloActivos') soloActivos?: string) {
+    const activos = soloActivos === undefined ? true : soloActivos === 'true';
+    return this.unidadesService.findAllNoPaginated(activos);
   }
 
   // Incluye la lista de usuarios asignados.

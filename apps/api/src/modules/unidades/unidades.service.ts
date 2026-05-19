@@ -7,6 +7,16 @@ import {
 import { PrismaService } from 'prisma/prisma.service';
 import { CreateUnidadDto } from './dto/create-unidad.dto';
 import { UpdateUnidadDto } from './dto/update-unidad.dto';
+import { QueryUnidadDto } from './dto/query-unidad.dto';
+import { paginate } from 'src/common/helpers/paginate.helper';
+
+const listSelect = {
+  id: true,
+  nombre: true,
+  sigla: true,
+  activo: true,
+  _count: { select: { usuarios: true } },
+} as const;
 
 @Injectable()
 export class UnidadesService {
@@ -31,7 +41,37 @@ export class UnidadesService {
     });
   }
 
-  findAll(soloActivos?: boolean) {
+  async findAll(query: QueryUnidadDto) {
+    const { page = 1, limit = 10, search, soloActivos } = query;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      ...(soloActivos ? { activo: true } : {}),
+      ...(search
+        ? {
+            OR: [
+              { nombre: { contains: search, mode: 'insensitive' as const } },
+              { sigla: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.unidad.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: listSelect,
+      }),
+      this.prisma.unidad.count({ where }),
+    ]);
+
+    return paginate(data, total, page, limit);
+  }
+
+  findAllNoPaginated(soloActivos = true) {
     return this.prisma.unidad.findMany({
       where: soloActivos ? { activo: true } : undefined,
       orderBy: { nombre: 'asc' },
@@ -40,7 +80,6 @@ export class UnidadesService {
         nombre: true,
         sigla: true,
         activo: true,
-        _count: { select: { usuarios: true } },
       },
     });
   }

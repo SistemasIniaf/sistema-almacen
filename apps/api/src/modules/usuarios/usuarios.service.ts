@@ -12,6 +12,8 @@ import { PrismaService } from 'prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { QueryUsuarioDto } from './dto/query-usuario.dto';
+import { paginate } from 'src/common/helpers/paginate.helper';
 
 const SALT_ROUNDS = 10;
 
@@ -99,11 +101,52 @@ export class UsuariosService {
     });
   }
 
-  findAll(soloActivos?: boolean) {
+  async findAll(query: QueryUsuarioDto) {
+    const { page = 1, limit = 10, search, rol, soloActivos } = query;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      ...(soloActivos ? { activo: true } : {}),
+      ...(rol ? { rol } : {}),
+      ...(search
+        ? {
+            OR: [
+              { nombre: { contains: search, mode: 'insensitive' as const } },
+              { usuario: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.usuario.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: safeSelect,
+      }),
+      this.prisma.usuario.count({ where }),
+    ]);
+
+    return paginate(data, total, page, limit);
+  }
+
+  findAllNoPaginated(soloActivos = true, rol?: Rol) {
     return this.prisma.usuario.findMany({
-      where: soloActivos ? { activo: true } : undefined,
+      where: {
+        ...(soloActivos ? { activo: true } : {}),
+        ...(rol ? { rol } : {}),
+      },
       orderBy: { nombre: 'asc' },
-      select: safeSelect,
+      select: {
+        id: true,
+        nombre: true,
+        usuario: true,
+        rol: true,
+        activo: true,
+        unidad: { select: { id: true, nombre: true, sigla: true } },
+      },
     });
   }
 
