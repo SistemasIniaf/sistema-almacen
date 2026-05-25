@@ -24,28 +24,31 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-import { UnidadEditDialog } from "./UnidadDialog"
-import { useToggleUnidad, useDeleteUnidad } from "../hooks/useUnidadMutations"
-import type { Unidad } from "../types/unidad.types"
+import { UsuarioEditDialog } from "./UsuarioDialog"
+import {
+  useToggleUsuario,
+  useDeleteUsuario,
+} from "../hooks/useUsuarioMutations"
+import type { Usuario } from "../types/usuario.types"
 
-interface UnidadActionsProps {
-  unidad: Unidad
+interface UsuarioActionsProps {
+  usuario: Usuario
 }
 
-export function UnidadActions({ unidad }: UnidadActionsProps) {
+export function UsuarioActions({ usuario }: UsuarioActionsProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [toggleOpen, setToggleOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const { mutate: toggle, isPending: isToggling } = useToggleUnidad()
-  const { mutate: remove, isPending: isDeleting } = useDeleteUnidad()
+  const { mutate: toggle, isPending: isToggling } = useToggleUsuario()
+  const { mutate: remove, isPending: isDeleting } = useDeleteUsuario()
 
   function handleToggle() {
-    toggle(unidad.id, { onSuccess: () => setToggleOpen(false) })
+    toggle(usuario.id, { onSuccess: () => setToggleOpen(false) })
   }
 
   function handleDelete() {
-    remove(unidad.id, { onSuccess: () => setDeleteOpen(false) })
+    remove(usuario.id, { onSuccess: () => setDeleteOpen(false) })
   }
 
   return (
@@ -69,7 +72,7 @@ export function UnidadActions({ unidad }: UnidadActionsProps) {
 
           <DropdownMenuItem onClick={() => setToggleOpen(true)}>
             <PowerIcon />
-            {unidad.activo ? "Desactivar" : "Activar"}
+            {usuario.activo ? "Desactivar" : "Activar"}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -77,7 +80,6 @@ export function UnidadActions({ unidad }: UnidadActionsProps) {
           <DropdownMenuItem
             variant="destructive"
             onClick={() => setDeleteOpen(true)}
-            disabled={unidad._count.usuarios > 0}
           >
             <Trash2Icon />
             Eliminar
@@ -86,8 +88,8 @@ export function UnidadActions({ unidad }: UnidadActionsProps) {
       </DropdownMenu>
 
       {/* ── Dialog editar ── */}
-      <UnidadEditDialog
-        unidad={unidad}
+      <UsuarioEditDialog
+        usuario={usuario}
         open={editOpen}
         onOpenChange={setEditOpen}
       />
@@ -97,24 +99,24 @@ export function UnidadActions({ unidad }: UnidadActionsProps) {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>
-              {unidad.activo ? "Desactivar unidad" : "Activar unidad"}
+              {usuario.activo ? "Desactivar usuario" : "Activar usuario"}
             </DialogTitle>
             <DialogDescription>
-              {unidad.activo ? (
+              {usuario.activo ? (
                 <>
-                  ¿Estás seguro de que deseas desactivar{" "}
+                  ¿Estás seguro de que deseas desactivar a{" "}
                   <span className="font-medium text-foreground">
-                    {unidad.nombre}
+                    {usuario.nombre}
                   </span>
-                  ? No podrá asignarse a nuevos usuarios.
+                  ? No podrá iniciar sesión hasta que sea reactivado.
                 </>
               ) : (
                 <>
-                  ¿Deseas activar{" "}
+                  ¿Deseas activar a{" "}
                   <span className="font-medium text-foreground">
-                    {unidad.nombre}
+                    {usuario.nombre}
                   </span>
-                  ? Volverá a estar disponible para asignar usuarios.
+                  ? Podrá volver a iniciar sesión en el sistema.
                 </>
               )}
             </DialogDescription>
@@ -128,13 +130,13 @@ export function UnidadActions({ unidad }: UnidadActionsProps) {
               Cancelar
             </Button>
             <Button
-              variant={unidad.activo ? "destructive" : "default"}
+              variant={usuario.activo ? "destructive" : "default"}
               onClick={handleToggle}
               disabled={isToggling}
             >
               {isToggling
                 ? "Procesando..."
-                : unidad.activo
+                : usuario.activo
                   ? "Sí, desactivar"
                   : "Sí, activar"}
             </Button>
@@ -146,11 +148,11 @@ export function UnidadActions({ unidad }: UnidadActionsProps) {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Eliminar unidad</DialogTitle>
+            <DialogTitle>Eliminar usuario</DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que deseas eliminar{" "}
+              ¿Estás seguro de que deseas eliminar a{" "}
               <span className="font-medium text-foreground">
-                {unidad.nombre}
+                {usuario.nombre}
               </span>
               ? Esta acción no se puede deshacer.
             </DialogDescription>

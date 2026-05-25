@@ -1,4 +1,5 @@
-import { UsuarioDialog } from "../components/UsuarioDialog"
+import { UsuariosTable } from "../components/UsuariosTable"
+import { UsuarioCreateDialog } from "../components/UsuarioDialog"
 
 export const UsuariosPage = () => {
   return (
@@ -12,10 +13,10 @@ export const UsuariosPage = () => {
             Gestiona los usuarios del sistema.
           </p>
         </div>
-        <UsuarioDialog />
+        <UsuarioCreateDialog />
       </div>
 
-      {/* TODO: tabla de usuarios */}
+      <UsuariosTable />
     </div>
   )
 }

@@ -1,81 +1,128 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import { rolEnum, usuarioSchema } from "../lib/usuario.schema"
-
-import type {
-  Rol,
-  UsuarioFormInput,
-  UsuarioFormOutput,
-} from "../lib/usuario.schema"
-
-import { Button } from "@/components/ui//button"
+import { Button } from "@/components/ui/button"
 import { FormInput } from "@/components/form/FormInput"
 import { FormInputPassword } from "@/components/form/FormInputPassword"
 import { FormSelect } from "@/components/form/FormSelect"
-import { FieldGroup } from "@/components/ui//field"
-import { DialogClose, DialogFooter } from "@/components/ui//dialog"
+import { FieldGroup } from "@/components/ui/field"
+import { DialogClose, DialogFooter } from "@/components/ui/dialog"
 
-const roles = rolEnum.map((rol) => ({
+import { createUsuarioSchema } from "../lib/usuario.schema"
+import { useCreateUsuario } from "../hooks/useUsuarioMutations"
+import { useUnidadesAll } from "@/modules/unidades/hooks/useUnidades"
+import { ROL_LABELS, ROL_ENUM } from "../types/usuario.types"
+
+import type { CreateUsuarioFormInput } from "../lib/usuario.schema"
+
+const rolOptions = ROL_ENUM.map((rol) => ({
   value: rol,
-  label: rol.charAt(0).toUpperCase() + rol.slice(1),
+  label: ROL_LABELS[rol],
 }))
 
-interface UsuarioFormProps {
-  onClose?: () => void
+interface Props {
+  onClose: () => void
 }
 
-export function UsuarioForm({ onClose }: UsuarioFormProps) {
-  const { control, handleSubmit, reset } = useForm<UsuarioFormInput>({
-    resolver: zodResolver(usuarioSchema),
+export function UsuarioCreateForm({ onClose }: Props) {
+  const { data: unidades = [], isLoading: isLoadingUnidades } =
+    useUnidadesAll(true)
+  const { mutate: create, isPending } = useCreateUsuario({ onSuccess: onClose })
+
+  const unidadOptions = unidades.map((u) => ({
+    value: String(u.id),
+    label: `${u.sigla} — ${u.nombre}`,
+  }))
+
+  const form = useForm<CreateUsuarioFormInput>({
+    resolver: zodResolver(createUsuarioSchema),
     defaultValues: {
       nombre: "",
       usuario: "",
       password: "",
-      rol: "" as Rol,
-      estado: true,
+      rol: undefined,
+      unidadId: undefined,
+      activo: true,
     },
   })
 
-  function onSubmit(data: UsuarioFormInput) {
-    const validated: UsuarioFormOutput = usuarioSchema.parse(data)
-    console.log(validated)
+  const rolActual = form.watch("rol")
+  const esAdministrador = rolActual === "administrador"
 
-    reset()
-    onClose?.()
-  }
-
-  function handleCancel() {
-    reset()
-    onClose?.()
+  function onSubmit(data: CreateUsuarioFormInput) {
+    create({
+      nombre: data.nombre,
+      usuario: data.usuario,
+      password: data.password,
+      rol: data.rol,
+      unidadId: esAdministrador
+        ? undefined
+        : (data.unidadId as number | undefined),
+      activo: data.activo,
+    })
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
-        <FormInput name="nombre" label="Nombre completo" control={control} />
-        <FormInput name="usuario" label="Usuario" control={control} />
+        <FormInput
+          name="nombre"
+          label="Nombre completo"
+          placeholder="Ej: Juan Pérez"
+          control={form.control}
+          disabled={isPending}
+        />
+        <FormInput
+          name="usuario"
+          label="Usuario"
+          placeholder="Ej: jperez"
+          control={form.control}
+          disabled={isPending}
+        />
         <FormInputPassword
           name="password"
           label="Contraseña"
-          control={control}
+          control={form.control}
+          disabled={isPending}
         />
         <FormSelect
           name="rol"
-          control={control}
           label="Rol"
           placeholder="Selecciona un rol"
-          options={roles}
+          options={rolOptions}
+          control={form.control}
+          disabled={isPending}
         />
+        {!esAdministrador && (
+          <FormSelect
+            name="unidadId"
+            label="Unidad"
+            placeholder={
+              isLoadingUnidades ? "Cargando..." : "Selecciona una unidad"
+            }
+            options={unidadOptions}
+            control={form.control as never}
+            disabled={isPending || isLoadingUnidades || !rolActual}
+          />
+        )}
       </FieldGroup>
 
       <DialogFooter>
         <DialogClose asChild>
-          <Button variant="outline" onClick={handleCancel}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => {
+              form.reset()
+              onClose()
+            }}
+          >
             Cancelar
           </Button>
         </DialogClose>
-        <Button type="submit">Registrar</Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Registrando..." : "Registrar"}
+        </Button>
       </DialogFooter>
     </form>
   )
